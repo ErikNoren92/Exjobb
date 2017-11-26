@@ -1,3 +1,0 @@
-/home/christian/pcl/test/converter/build/CMakeFiles/edit_cache.dir
-/home/christian/pcl/test/converter/build/CMakeFiles/rebuild_cache.dir
-/home/christian/pcl/test/converter/build/CMakeFiles/converter.dir

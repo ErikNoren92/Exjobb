@@ -4,7 +4,7 @@ import sys
 import sklearn
 from sklearn.neighbors import KDTree
 import pdb
-import networkx 
+import networkx as nx
 from networkx.algorithms.components.connected import connected_components
 import matplotlib.pyplot as plt
 
@@ -35,7 +35,7 @@ for array in neighborhoods:
 #print(clusters)
 
 def to_graph(neighbors_clusters):
-	G=networkx.Graph()
+	G=nx.Graph()
 	for neighbors in neighbors_clusters:
 		G.add_nodes_from(neighbors)
 		G.add_edges_from(to_edges(neighbors))
@@ -49,11 +49,18 @@ def to_edges(neighbors):
 		last = current
 	
 G=to_graph(clusters)
-print connected_components(G)
-#print G.neighbors(0)
-print(len(G))
-G.draw_networkx_nodes(G, pos, cmap=plt.get_cmap('jet'), 
-                       node_color = values, node_size = 500)
+
+sub = list(nx.connected_components(G))
+#print s[0].nodes()
+print nx.number_connected_components(G)
+print type(sub[0])
+print list(sub[0])
+#print s[0].nodes()
+#nx.write_graphml(G,"test.graphml")
+
+
+
+#                       node_color = values, node_size = 500)
 
 #for neighbors_point_1 in neighborhoods:
 #	cluster = neighbors_point_1
