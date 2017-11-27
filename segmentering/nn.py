@@ -52,11 +52,20 @@ G=to_graph(clusters)
 
 sub = list(nx.connected_components(G))
 #print s[0].nodes()
-print nx.number_connected_components(G)
+#print nx.number_connected_components(G)
 print type(sub[0])
-print list(sub[0])
+print list(sub[1])
+fileName = 0
+for cluster in sub:
+	list(cluster)
+	fileName += 1
+	output=open((str(fileName)+".pcd"),"w")
+	output.write("# .PCD v0.7 - Point Cloud Data file format\nVERSION 0.7\nFIELDS x y z\nSIZE 4 4 4\nTYPE F F F\nCOUNT 1 1 1\nWIDTH "+str(len(cluster)) +"\nHEIGHT 1\nVIEWPOINT 0 0 0 1 0 0 0\nPOINTS "+str(len(cluster))+"\nDATA ascii\n")
+	for node in cluster:
+		output.write(str(pointCloud[node][0])+" "+str(pointCloud[node][1])+" "+str(pointCloud[node][2])+"\n")
+	output.close()
 #print s[0].nodes()
-#nx.write_graphml(G,"test.graphml")
+nx.write_graphml(G,"test.graphml")
 
 
 
