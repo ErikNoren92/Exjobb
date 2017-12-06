@@ -76,12 +76,12 @@ def resize(model,pointCloud):
 	return formatedCloud
 
 def retrieveData():
-	pointCloud = readFile("set2.pcd")
+	pointCloud = readFile("71.pcd")
 	tree = KDTree(pointCloud)
 	Graph=to_graph(getNeighbors(tree,pointCloud))
+	nx.write_graphml(Graph,"test.graphml")
 	subGraph = list(nx.connected_components(Graph))
 	return formatData(subGraph,pointCloud)
-
 
 
 
@@ -95,26 +95,22 @@ def retrieveData():
 #		for node in cluster:
 #			output.write(str(pointCloud[node][0])+" "+str(pointCloud[node][1])+" "+str(pointCloud[node][2])+"\n")
 #		output.close()
-#nx.write_graphml(Graph,"test.graphml")
 
 data,labels = retrieveData()
+array = np.array([[0,0,0]])
 
-array = np.asarray(([[0,0,0]]),dtype=np.float32)
-
-b= np.asarray(data[0],dtype=np.float32)
-#array = np.concatenate((array,(np.asarray(data[0],dtype=np.float32))),axis=0)
 for x in range(len(data)):
 	temp=np.asarray(data[x],dtype=np.float32)
 	array = np.concatenate((array,temp),axis=0)
+
+
 canvas = scene.SceneCanvas(keys='interactive', show=True)
 view = canvas.central_widget.add_view()
-
 fov = 60.
 cam1 = scene.cameras.FlyCamera(parent=view.scene, fov=fov)
-cam2 = scene.cameras.TurntableCamera(parent=view.scene, fov=fov)
-cam3 = scene.cameras.ArcballCamera(parent=view.scene, fov=fov)
-
-view.camera = cam2
+#cam2 = scene.cameras.TurntableCamera(parent=view.scene, fov=fov)
+#cam3 = scene.cameras.ArcballCamera(parent=view.scene, fov=fov)
+view.camera = cam1
 
 # Implement key presses
 @canvas.events.key_press.connect
@@ -152,18 +148,28 @@ def on_key_press(event):
         th = volume1.threshold if volume1.visible else volume2.threshold
         print("Isosurface threshold: %0.3f" % th)
 
-#for object in data:
-#	print(object.shape)
-#	print(object[0].shape)
-color1 = np.array([[1, 1, 0]] * 9676)
-#color2 = np.array([[0.4, 1, 0]] * 128)
-#color3 = np.array([[0, 0.4, 1]] * 128)
 
-print(color1.shape)
+n=0
+colorMap = np.array([[1, 1, 1]])
+for lable in labels:
+	if lable == 1:
+		color = np.array([[1, 1, 0]] * len(data[n]))
+		colorMap = np.concatenate((colorMap,color),axis=0)
+	elif lable == 2:
+		color = np.array([[0, 1, 1]] * len(data[n]))
+		colorMap = np.concatenate((colorMap,color),axis=0)
+	elif lable == 3:
+		color = np.array([[1, 0, 1]] * len(data[n]))
+		colorMap = np.concatenate((colorMap,color),axis=0)
+	else:
+		color = np.array([[0, 1, 0]] * len(data[n]))
+		colorMap = np.concatenate((colorMap,color),axis=0)
+	n += 1
+
 
 # Create the scatter plot
 scatter = scene.visuals.Markers()
-scatter.set_data(array, face_color=color1,size=1)
+scatter.set_data(array, face_color=colorMap,size=1)
 view.add(scatter)
 view.camera = scene.PanZoomCamera(aspect=1)
 view.camera.set_range()
