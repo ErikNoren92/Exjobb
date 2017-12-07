@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import random
 from vispy import scene, visuals, app, gloo, io
 from itertools import cycle
+import time
 
 groundLevel = -1.64
 distance = 0.5
@@ -25,6 +26,7 @@ def readFile(fileName):
 				pointCloud.append(floats[:3])
 		except Exception as e:
 			pass
+	print(len(pointCloud))
 	return pointCloud
 
 
@@ -76,10 +78,9 @@ def resize(model,pointCloud):
 	return formatedCloud
 
 def retrieveData():
-	pointCloud = readFile("71.pcd")
+	pointCloud = readFile(sys.argv[1])
 	tree = KDTree(pointCloud)
 	Graph=to_graph(getNeighbors(tree,pointCloud))
-	nx.write_graphml(Graph,"test.graphml")
 	subGraph = list(nx.connected_components(Graph))
 	return formatData(subGraph,pointCloud)
 
@@ -95,8 +96,15 @@ def retrieveData():
 #		for node in cluster:
 #			output.write(str(pointCloud[node][0])+" "+str(pointCloud[node][1])+" "+str(pointCloud[node][2])+"\n")
 #		output.close()
-
+start_time = time.time()
 data,labels = retrieveData()
+print(time.time()-start_time)
+a=0
+for x in data:
+	a= a+ len(x)
+		
+print(a)
+print(len(data))
 array = np.array([[0,0,0]])
 
 for x in range(len(data)):
