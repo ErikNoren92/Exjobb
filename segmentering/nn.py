@@ -11,6 +11,7 @@ import random
 from vispy import scene, visuals, app, gloo, io
 from itertools import cycle
 import time
+import pdb
 
 groundLevel = -1.64
 distance = 0.5
@@ -23,10 +24,9 @@ def readFile(fileName):
 		try:
 			floats=[float(x) for x in line.split(" ")]
 			if floats[2]>groundLevel and floats[0] < 40 and floats[0] > -40 and floats[1] < 40 and floats[1] > -40 :
-				pointCloud.append(floats[:3])
+				pointCloud.append(floats[0:3])
 		except Exception as e:
 			pass
-	print(len(pointCloud))
 	return pointCloud
 
 
@@ -84,6 +84,18 @@ def retrieveData():
 	subGraph = list(nx.connected_components(Graph))
 	return formatData(subGraph,pointCloud)
 
+def exportData():
+	formatedList = []
+	orderList = []
+	data,labels = retrieveData()
+	for x in data:
+		if len(x) == 128:
+			X = (max([c[0] for c in x]) + min([c[0] for c in x])) / 2
+			Y = (max([c[1] for c in x]) + min([c[1] for c in x])) /2
+			Z = (max([c[2] for c in x]) + min([c[2] for c in x])) / 2
+			formatedList.append([x[0]-X,x[1]-Y,x[2]-Z])
+			orderList.append(data.index(x))
+	return np.array(formatedList), orderList
 
 
 #fileName = 0
@@ -96,28 +108,34 @@ def retrieveData():
 #		for node in cluster:
 #			output.write(str(pointCloud[node][0])+" "+str(pointCloud[node][1])+" "+str(pointCloud[node][2])+"\n")
 #		output.close()
-start_time = time.time()
-data,labels = retrieveData()
-print(time.time()-start_time)
-a=0
-for x in data:
-	a= a+ len(x)
-		
-print(a)
-print(len(data))
-array = np.array([[0,0,0]])
 
-for x in range(len(data)):
-	temp=np.asarray(data[x],dtype=np.float32)
-	array = np.concatenate((array,temp),axis=0)
+
+
+def printInfo():
+	start_time = time.time()
+	data,labels = retrieveData()
+	print(time.time()-start_time)
+	a=0
+	for x in data:
+		a= a+ len(x)		
+	print(a)
+	print(len(data))
+
+def convertToNumpy2D(data):
+	array = np.array([[0,0,0]])
+	for x in range(len(data)):
+		temp=np.asarray(data[x],dtype=np.float32)
+		array = np.concatenate((array,temp),axis=0)
+	return array
+
 
 
 canvas = scene.SceneCanvas(keys='interactive', show=True)
 view = canvas.central_widget.add_view()
 fov = 60.
 cam1 = scene.cameras.FlyCamera(parent=view.scene, fov=fov)
-#cam2 = scene.cameras.TurntableCamera(parent=view.scene, fov=fov)
-#cam3 = scene.cameras.ArcballCamera(parent=view.scene, fov=fov)
+cam2 = scene.cameras.TurntableCamera(parent=view.scene, fov=fov)
+cam3 = scene.cameras.ArcballCamera(parent=view.scene, fov=fov)
 view.camera = cam1
 
 # Implement key presses
@@ -157,28 +175,38 @@ def on_key_press(event):
         print("Isosurface threshold: %0.3f" % th)
 
 
-n=0
-colorMap = np.array([[1, 1, 1]])
-for lable in labels:
-	if lable == 1:
-		color = np.array([[1, 1, 0]] * len(data[n]))
-		colorMap = np.concatenate((colorMap,color),axis=0)
-	elif lable == 2:
-		color = np.array([[0, 1, 1]] * len(data[n]))
-		colorMap = np.concatenate((colorMap,color),axis=0)
-	elif lable == 3:
-		color = np.array([[1, 0, 1]] * len(data[n]))
-		colorMap = np.concatenate((colorMap,color),axis=0)
-	else:
-		color = np.array([[0, 1, 0]] * len(data[n]))
-		colorMap = np.concatenate((colorMap,color),axis=0)
-	n += 1
-
-
+#pdb.set_trace()
 # Create the scatter plot
+def colorMaping(predLabels,data):
+	
+	colorMap = np.array([[1,1,1]])
+	n=0	
+	for obj in data:
+		if len(obj) == 128:
+			if predLabels[n] == 1:
+				color = np.array([[1, 1, 0]] * len(obj))
+				colorMap = np.concatenate((colorMap,color),axis=0)
+			elif predLabels[n] == 2:
+				color = np.array([[0, 1, 1]] * len(obj))
+				colorMap = np.concatenate((colorMap,color),axis=0)
+			elif predLabels[n] == 3:
+				color = np.array([[1, 0, 1]] * len(obj))
+				colorMap = np.concatenate((colorMap,color),axis=0)
+			else:
+				color = np.array([[0, 1, 0]] * len(obj))
+				colorMap = np.concatenate((colorMap,color),axis=0)
+			n += 1
+		else:
+			color = np.array([[0, 1, 0]] * len(obj))
+			colorMap = np.concatenate((colorMap,color),axis=0)
+	return colorMap
+
+data,labels = retrieveData()	
+array = convertToNumpy2D(data)
 scatter = scene.visuals.Markers()
-scatter.set_data(array, face_color=colorMap,size=1)
+scatter.set_data(array[:,:3], face_color=colorMaping(labels,data),size=1)
 view.add(scatter)
 view.camera = scene.PanZoomCamera(aspect=1)
 view.camera.set_range()
 app.run()
+
