@@ -13,12 +13,12 @@ sys.path.append(os.path.join(BASE_DIR, 'models'))
 sys.path.append(os.path.join(BASE_DIR, 'utils'))
 import provider
 import pc_util
-
+import pdb
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--gpu', type=int, default=0, help='GPU to use [default: GPU 0]')
 parser.add_argument('--model', default='pointnetFinal_cls', help='Model name: pointnet_cls or pointnet_cls_basic [default: pointnet_cls]')
-parser.add_argument('--batch_size', type=int, default=2, help='Batch Size during training [default: 1]')
+parser.add_argument('--batch_size', type=int, default=1, help='Batch Size during training [default: 1]')
 parser.add_argument('--num_point', type=int, default=128, help='Point Number [256/512/1024/2048] [default: 1024]')
 parser.add_argument('--model_path', default='log/model.ckpt', help='model checkpoint file path [default: log/model.ckpt]')
 parser.add_argument('--dump_dir', default='dump', help='dump folder path [dump]')
@@ -98,12 +98,14 @@ def eval_one_epoch(sess, ops, num_votes=1, topk=1):
     total_seen_class = [0 for _ in range(NUM_CLASSES)]
     total_correct_class = [0 for _ in range(NUM_CLASSES)]
     fout = open(os.path.join(DUMP_DIR, 'pred_label.txt'), 'w')
+    predValues = []
     for fn in range(len(TEST_FILES)):
         log_string('----'+str(fn)+'----')
         current_data, current_label = provider.loadDataFile(TEST_FILES[fn])
+        #pdb.set_trace()
         current_data = current_data[:,0:NUM_POINT,:]
         current_label = np.squeeze(current_label)
-        print(current_data.shape)
+        #pdb.set_trace()
 
         file_size = current_data.shape[0]
         num_batches = file_size // BATCH_SIZE
@@ -126,6 +128,7 @@ def eval_one_epoch(sess, ops, num_votes=1, topk=1):
                              ops['is_training_pl']: is_training}
                 loss_val, pred_val = sess.run([ops['loss'], ops['pred']],
                                           feed_dict=feed_dict)
+        
                 batch_pred_sum += pred_val
                 batch_pred_val = np.argmax(pred_val, 1)
                 for el_idx in range(cur_batch_size):
@@ -134,9 +137,11 @@ def eval_one_epoch(sess, ops, num_votes=1, topk=1):
             pred_val_topk = np.argsort(batch_pred_sum, axis=-1)[:,-1*np.array(range(topk))-1]
             pred_val = np.argmax(batch_pred_classes, 1)
             pred_val = np.argmax(batch_pred_sum, 1)
+            predValues.append(np.ndarray.tolist(pred_val)) 
             # Aggregating END
-
             correct = np.sum(pred_val == current_label[start_idx:end_idx])
+            #db.set_trace()
+
             # correct = np.sum(pred_val_topk[:,0:topk] == label_val)
             total_correct += correct
             total_seen += cur_batch_size
@@ -155,11 +160,12 @@ def eval_one_epoch(sess, ops, num_votes=1, topk=1):
                     output_img = pc_util.point_cloud_three_views(np.squeeze(current_data[i, :, :]))
                     scipy.misc.imsave(img_filename, output_img)
                     error_cnt += 1
-
+    #pdb.set_trace()
     log_string('eval mean loss: %f' % (loss_sum / float(total_seen)))
     log_string('eval accuracy: %f' % (total_correct / float(total_seen)))
     log_string('eval avg class acc: %f' % (np.mean(np.array(total_correct_class)/np.array(total_seen_class,dtype=np.float))))
-
+    
+    
     class_accuracies = np.array(total_correct_class)/np.array(total_seen_class,dtype=np.float)
     for i, name in enumerate(SHAPE_NAMES):
         log_string('%10s:\t%0.3f' % (name, class_accuracies[i]))
