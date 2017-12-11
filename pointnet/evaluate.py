@@ -13,11 +13,12 @@ sys.path.append(os.path.join(BASE_DIR, 'models'))
 sys.path.append(os.path.join(BASE_DIR, 'utils'))
 import provider
 import pc_util
+from vispy import scene, visuals, app, gloo, io
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--gpu', type=int, default=0, help='GPU to use [default: GPU 0]')
-parser.add_argument('--model', default='pointnet_cls', help='Model name: pointnet_cls or pointnet_cls_basic [default: pointnet_cls]')
+parser.add_argument('--model', default='pointnetFinal_cls', help='Model name: pointnet_cls or pointnet_cls_basic [default: pointnet_cls]')
 parser.add_argument('--batch_size', type=int, default=1, help='Batch Size during training [default: 1]')
 parser.add_argument('--num_point', type=int, default=128, help='Point Number [256/512/1024/2048] [default: 1024]')
 parser.add_argument('--model_path', default='log/model.ckpt', help='model checkpoint file path [default: log/model.ckpt]')
@@ -166,6 +167,15 @@ def eval_one_epoch(sess, ops, num_votes=1, topk=1):
     for i, name in enumerate(SHAPE_NAMES):
         log_string('%10s:\t%0.3f' % (name, class_accuracies[i]))
     return predValues
+
+canvas = scene.SceneCanvas(keys='interactive', show=True)
+view = canvas.central_widget.add_view()
+fov = 60.
+cam1 = scene.cameras.FlyCamera(parent=view.scene, fov=fov)
+cam2 = scene.cameras.TurntableCamera(parent=view.scene, fov=fov)
+cam3 = scene.cameras.ArcballCamera(parent=view.scene, fov=fov)
+view.camera = cam1
+
 # Implement key presses
 @canvas.events.key_press.connect
 def on_key_press(event):
@@ -207,10 +217,10 @@ if __name__=='__main__':
     with tf.Graph().as_default():
         predValues = evaluate(num_votes=1)
 
-    data,labels = nn.retrieveData()    
+    data,labels = retrieveData()    
     array = convertToNumpy2D(data)
     scatter = scene.visuals.Markers()
-    scatter.set_data(array[:,:3], face_color=colorMaping(labels,data),size=1)
+    scatter.set_data(array[:,:3], face_color=colorMaping(predValues,data),size=1)
     view.add(scatter)
     view.camera = scene.PanZoomCamera(aspect=1)
     view.camera.set_range()

@@ -1,9 +1,1 @@
-Namespace(batch_size=2, dump_dir='dump', gpu=0, model='pointnet_cls', model_path='log/model.ckpt', num_point=128, visu=False)
-Model restored.
-----0----
-eval mean loss: 0.612171
-eval accuracy: 0.500000
-eval avg class acc: nan
-   Cyclist:	0.000
-       Car:	1.000
-Pedistrian:	nan
+Namespace(batch_size=1, dump_dir='dump', gpu=0, model='pointnet_cls', model_path='log/model.ckpt', num_point=128, visu=False)
