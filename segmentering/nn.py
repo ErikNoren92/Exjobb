@@ -11,7 +11,6 @@ import random
 from vispy import scene, visuals, app, gloo, io
 from itertools import cycle
 import time
-import pdb
 
 groundLevel = -1.64
 distance = 0.5
@@ -88,12 +87,13 @@ def exportData():
 	formatedList = []
 	orderList = []
 	data,labels = retrieveData()
-	for x in data:
-		if len(x) == 128:
-			X = (max([c[0] for c in x]) + min([c[0] for c in x])) / 2
-			Y = (max([c[1] for c in x]) + min([c[1] for c in x])) /2
-			Z = (max([c[2] for c in x]) + min([c[2] for c in x])) / 2
-			formatedList.append([x[0]-X,x[1]-Y,x[2]-Z])
+	for cluster in data:
+		if len(cluster) == 128:
+			X = (max([point[0] for point in cluster]) + min([point[0] for point in cluster])) / 2
+			Y = (max([point[1] for point in cluster]) + min([point[1] for point in cluster])) /2
+			Z = (max([point[2] for point in cluster]) + min([point[2] for point in cluster])) / 2
+			centeredCoordinates = [(point[0]-X,point[1]-Y,point[2]-Z) for point in cluster]
+			formatedList.append(centeredCoordinates)
 			orderList.append(data.index(x))
 	return np.array(formatedList), orderList
 
@@ -175,7 +175,6 @@ def on_key_press(event):
         print("Isosurface threshold: %0.3f" % th)
 
 
-#pdb.set_trace()
 # Create the scatter plot
 def colorMaping(predLabels,data):
 	
@@ -193,17 +192,18 @@ def colorMaping(predLabels,data):
 				color = np.array([[1, 0, 1]] * len(obj))
 				colorMap = np.concatenate((colorMap,color),axis=0)
 			else:
-				color = np.array([[0, 1, 0]] * len(obj))
+				color = np.array([[1, 1, 1]] * len(obj))
 				colorMap = np.concatenate((colorMap,color),axis=0)
 			n += 1
 		else:
-			color = np.array([[0, 1, 0]] * len(obj))
+			color = np.array([[1, 1, 1]] * len(obj))
 			colorMap = np.concatenate((colorMap,color),axis=0)
 	return colorMap
 
-data,labels = retrieveData()	
+data,labels = retrieveData()
 array = convertToNumpy2D(data)
 scatter = scene.visuals.Markers()
+formated, orderList = exportData()
 scatter.set_data(array[:,:3], face_color=colorMaping(labels,data),size=1)
 view.add(scatter)
 view.camera = scene.PanZoomCamera(aspect=1)
